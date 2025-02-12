@@ -7,4 +7,4 @@ else:
     from .types import *
     from .client import *
 
-__version__ = "0.3"
+__version__ = "0.4.0"
