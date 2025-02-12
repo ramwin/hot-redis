@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hot-redis2"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Xiang Wang", email = "ramwin@qq.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/ramwin/hot-redis#readme"
+Issues = "https://github.com/ramwin/hot-redis/issues"
+Source = "https://github.com/ramwin/hot-redis"
+
+[tool.hatch.version]
+path = "src/hot_redis/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/hot_redis tests}"
+
+[tool.coverage.run]
+source_pkgs = ["hot_redis", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/hot_redis/__about__.py",
+]
+
+[tool.coverage.paths]
+hot_redis = ["src/hot_redis", "*/hot-redis/src/hot_redis"]
+tests = ["tests", "*/hot-redis/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
