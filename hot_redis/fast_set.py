@@ -8,7 +8,7 @@ import time
 from redis import Redis
 
 
-class DelayBuyFastSet:
+class DelayButFastSet:
     """
     this class will read data from redis periodly and keep data in memory
     usage:

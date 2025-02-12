@@ -7,7 +7,7 @@ import time
 import unittest
 import logging
 
-from hot_redis.fast_set import DelayBuyFastSet
+from hot_redis.fast_set import DelayButFastSet
 from redis import Redis
 
 from multiprocessing import Pool
@@ -25,18 +25,18 @@ class Test(unittest.TestCase):
         Redis().delete("set_fastkey:value")
         Redis().delete("set_fastkey:version")
         Redis().delete("set_direct")
-        a = DelayBuyFastSet(redis_client=Redis(decode_responses=True), key="set_fastkey", timeout=5)
+        a = DelayButFastSet(redis_client=Redis(decode_responses=True), key="set_fastkey", timeout=5)
         for i in range(0, size, 2):
             a.add(str(i))
 
         start = time.perf_counter()
-        b = DelayBuyFastSet(redis_client=Redis(decode_responses=True), key="set_fastkey", timeout=5)
+        b = DelayButFastSet(redis_client=Redis(decode_responses=True), key="set_fastkey", timeout=5)
         cnt = 0
         for j in range(0, size, 3):
             if str(j) in b:
                 cnt += 1
         end = time.perf_counter()
-        LOGGER.info("task %d use DelayBuyFastSet: %f, result: %d", taskid, end - start, cnt)
+        LOGGER.info("task %d use DelayButFastSet: %f, result: %d", taskid, end - start, cnt)
 
         client = Redis(decode_responses=True)
         for i in range(0, size, 2):
