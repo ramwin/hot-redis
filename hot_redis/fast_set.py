@@ -43,7 +43,7 @@ class DelayBuyFastSet:
     def refresh_in_need(self):
         if time.perf_counter() < self.expire_at:
             return
-        self.expire_at = time.perf_counter() + timeout
+        self.expire_at = time.perf_counter() + self.timeout
         if int(self.redis_client.get(self.version_key) or 0) == self.version:
             return
         self.refresh()
@@ -57,5 +57,13 @@ class DelayBuyFastSet:
         self._value.add(value)
         added, version = self.redis_client.pipeline()\
                 .sadd(self.value_key, value)\
+                .incr(self.version_key)\
+                .execute()
+
+    def discard(self, value: str):
+        assert isinstance(value, str)
+        self._value.discard(value)
+        self.redis_client.pipeline()\
+                .srem(self.value_key, value)\
                 .incr(self.version_key)\
                 .execute()
