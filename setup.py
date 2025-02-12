@@ -5,7 +5,7 @@ from hot_redis import __version__ as version
 
 
 setup(
-    name="hot-redis",
+    name="hot-redis2",
     version=version,
     author="Stephen McDonald",
     author_email="steve@jupo.org",
