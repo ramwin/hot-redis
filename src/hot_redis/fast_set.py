@@ -67,3 +67,7 @@ class DelayButFastSet:
                 .srem(self.value_key, value)\
                 .incr(self.version_key)\
                 .execute()
+
+    def __iter__(self):
+        self.refresh_in_need()
+        return self._value.__iter__()
