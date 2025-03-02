@@ -40,7 +40,7 @@ class DelayButFastSet:
         self.refresh_in_need()
         return str(value) in self._value
 
-    def refresh_in_need(self):
+    def refresh_in_need(self) -> None:
         if time.perf_counter() < self.expire_at:
             return
         self.expire_at = time.perf_counter() + self.timeout
@@ -48,11 +48,11 @@ class DelayButFastSet:
             return
         self.refresh()
 
-    def refresh(self):
+    def refresh(self) -> None:
         self._value = self.redis_client.smembers(self.value_key)
         self.version = self.redis_client.incr(self.version_key)
 
-    def add(self, value: str):
+    def add(self, value: str) -> None:
         assert isinstance(value, str)
         self._value.add(value)
         added, version = self.redis_client.pipeline()\
@@ -60,7 +60,7 @@ class DelayButFastSet:
                 .incr(self.version_key)\
                 .execute()
 
-    def discard(self, value: str):
+    def discard(self, value: str) -> None:
         assert isinstance(value, str)
         self._value.discard(value)
         self.redis_client.pipeline()\
