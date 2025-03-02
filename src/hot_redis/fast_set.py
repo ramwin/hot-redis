@@ -13,12 +13,12 @@ class DelayButFastSet:
     this class will read data from redis periodly and keep data in memory
     usage:
 
-        WATCHING_USERS = DelayBuyFastSet(Redis(), key="WATCHING_USERS", timeout=5)
+        WATCHING_USERS = DelayBuyFastSet(Redis(decode_responses=True), key="WATCHING_USERS", timeout=5)
         "123" in WATCHING_USERS  # False
         WATCHING_USERS.add("123")
         "123" in WATCHING_USERS  # True
 
-        WATCHING_USERS = DelayBuyFastSet(Redis(), key="WATCHING_USERS", timeout=5)
+        WATCHING_USERS = DelayBuyFastSet(Redis(decode_responses=True), key="WATCHING_USERS", timeout=5)
         "123" in WATCHING_USERS  # True
     """
 
