@@ -5,6 +5,8 @@
 import random
 import time
 
+from typing import List
+
 from redis import Redis
 
 
@@ -22,7 +24,11 @@ class DelayButFastSet:
         "123" in WATCHING_USERS  # True
     """
 
-    def __init__(self, redis_client, key, timeout):
+    def __init__(self, redis_client=None, key="", timeout=10):
+        if redis_client is None:
+            redis_client = Redis(decode_responses=True)
+        if not key:
+            raise ValueError
         assert redis_client.get_encoder().decode_responses is True
 
         self.redis_client = redis_client
@@ -68,6 +74,22 @@ class DelayButFastSet:
                 .incr(self.version_key)\
                 .execute()
 
+    def update(self, *values: List[str]) -> None:
+        self._value.update(values)
+        if values:
+            self.redis_client.sadd(self.value_key, *values)
+
     def __iter__(self):
         self.refresh_in_need()
         return self._value.__iter__()
+
+    def __str__(self):
+        return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
+
+    def __repr__(self):
+        return f"DelayButFastSet:{self.vlaue_key}:{self.version_key}: {self._value}"
+
+    def __sub__(self, target):
+        if isinstance(target, DelayButFastSet):
+            return self._value - target._value
+        return self._value - target

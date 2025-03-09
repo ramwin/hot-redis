@@ -54,3 +54,13 @@ class Test(unittest.TestCase):
         task_cnt = 4
         with Pool(task_cnt) as p:
             p.map(self.inner_test_performance, range(task_cnt))
+
+    def test_diff(self):
+        a = DelayButFastSet(key="fast-set")
+        a.update("a", "b")
+        b = DelayButFastSet(key="fast-set2")
+        b.update("a", "c")
+        self.assertEqual(a - b, {"b"})
+        self.assertEqual({"a", "c"} - a._value, {"c"})
+        print(a)
+        print(b)
