@@ -87,7 +87,7 @@ class DelayButFastSet:
         return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
 
     def __repr__(self):
-        return f"DelayButFastSet:{self.vlaue_key}:{self.version_key}: {self._value}"
+        return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
 
     def __sub__(self, target):
         if isinstance(target, DelayButFastSet):
