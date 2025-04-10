@@ -5,7 +5,7 @@
 import random
 import time
 
-from typing import List
+from typing import List, Set
 
 from redis import Redis
 
@@ -24,7 +24,11 @@ class DelayButFastSet:
         "123" in WATCHING_USERS  # True
     """
 
-    def __init__(self, redis_client=None, key="", timeout=10):
+    def __init__(self, redis_client=None, key="", timeout=10, startup_init: bool = False):
+        """
+        params:
+            startup_init: load data from redis on instance initialized
+        """
         if redis_client is None:
             redis_client = Redis(decode_responses=True)
         if not key:
@@ -36,11 +40,15 @@ class DelayButFastSet:
         self.version_key = f"{key}:version"
 
         self.timeout = timeout
-        self.expire_at = time.perf_counter() + random.random() * timeout
+        self._value: Set[str] = set()
 
-        self._value = set()
-        self.version = 0
-        self.refresh()
+        if startup_init:
+            self.expire_at = time.perf_counter() + random.random() * timeout
+            self.version = 0
+            self.refresh()
+        else:
+            self.expire_at = time.perf_counter()
+            self.version = -1
 
     def __contains__(self, value):
         self.refresh_in_need()
@@ -84,12 +92,20 @@ class DelayButFastSet:
         return self._value.__iter__()
 
     def __str__(self):
-        return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
+        self.refresh_in_need()
+        if len(self._value) <= 100:
+            return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
+        return f"DelayButFastSet:{self.value_key}:{self.version_key}: too many values..."
 
     def __repr__(self):
-        return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
+        self.refresh_in_need()
+        if len(self._value) <= 100:
+            return f"DelayButFastSet:{self.value_key}:{self.version_key}: {self._value}"
+        return f"DelayButFastSet:{self.value_key}:{self.version_key}: too many values..."
 
     def __sub__(self, target):
+        self.refresh_in_need()
         if isinstance(target, DelayButFastSet):
+            target.refresh_in_need()
             return self._value - target._value
         return self._value - target
