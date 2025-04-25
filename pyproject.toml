@@ -62,3 +62,6 @@ exclude_lines = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hot_redis"]
+
+[tool.setuptools.package-data]
+django_commands = ["src/hot_redis/py.typed"]
