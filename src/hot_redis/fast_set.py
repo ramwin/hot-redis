@@ -109,3 +109,7 @@ class DelayButFastSet:
             target.refresh_in_need()
             return self._value - target._value
         return self._value - target
+
+    def __len__(self):
+        self.refresh_in_need()
+        return len(self._value)
