@@ -82,6 +82,8 @@ class DelayButFastSet:
                 .incr(self.version_key)\
                 .execute()
 
+    remove = discard
+
     def update(self, *values: List[str]) -> None:
         self._value.update(values)
         if values:
