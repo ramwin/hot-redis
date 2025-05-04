@@ -7,13 +7,13 @@ import datetime
 import time
 import json
 
-from typing import List, Union
+from typing import List, Union, TypedDict
 
 from redis import Redis
 from redis.cluster import RedisCluster
 
 
-class DebounceTask:
+class DebounceTask(TypedDict):
     DELTA = int(datetime.datetime(2025, 1, 1, 0, 0, 0).timestamp())
 
     def __init__(self, client: Redis, key: str, timeout: int):
@@ -60,6 +60,11 @@ class DebounceTask:
                 .zremrangebyscore(self.key, min=0, max=delete_before)\
                 .execute()
             return taskids
+
+
+class Info(TypedDict):
+    remain_cnt: int
+    overtime_cnt: int
 
 
 class DebounceInfoTask:
@@ -121,3 +126,15 @@ class DebounceInfoTask:
                 json.loads(taskid)
                 for taskid in taskids
         ]
+
+    def get_info(self) -> DebounceTask:
+        """
+        return current info
+            remain_cnt: the task in redis
+            overtime_cnt: the task need to be handled(created before timeout) in redis
+        """
+        delete_before = self.get_time() - self.timeout
+        return {
+                "overtime_cnt": self.client.zcount(self.key, min=0, max=delete_before),
+                "remain_cnt": self.client.zcard(self.key),
+        }
