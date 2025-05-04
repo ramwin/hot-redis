@@ -7,8 +7,10 @@ import datetime
 import time
 import json
 
-from typing import List
+from typing import List, Union
+
 from redis import Redis
+from redis.cluster import RedisCluster
 
 
 class DebounceTask:
@@ -64,7 +66,7 @@ class DebounceInfoTask:
     """compare to debouncetask, I accept dict as input"""
     DELTA = int(datetime.datetime(2025, 1, 1, 0, 0, 0).timestamp())
 
-    def __init__(self, client: Redis, key: str, timeout: int):
+    def __init__(self, client: Union[Redis, RedisCluster], key: str, timeout: int):
         """
         timeout: 1means 0.1s
         """
