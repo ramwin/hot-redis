@@ -83,7 +83,7 @@ class DebounceInfoTask:
         return int((time.time() - self.DELTA) * 10)
 
     def add_task(self, task_info: dict):
-        taskid = json.dumps(task_info, ensure_ascii=False)
+        taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
         self.client.zadd(self.key, {taskid: self.get_time()}, nx=True)
 
     def pop_tasks(self, max_wait: int=0, count: int=100) -> List[dict]:
