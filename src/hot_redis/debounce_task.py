@@ -117,6 +117,20 @@ class DebounceInfoTask(Generic[T]):
             return self._pop_tasks(count)
         return self._pop_tasks(count)
 
+    def get_tasks(self, count: int=100) -> List[T]:
+        """get task without pop"""
+        now = self.get_time()
+        delete_before = now - self.timeout
+        taskids = self.client.zrangebyscore(
+            self.key,
+            min=0, max=delete_before,
+            start=0, num=count,
+        )
+        return [
+                cast(T, json.loads(cast(str, taskid)))
+                for taskid in taskids
+        ]
+
     def _pop_tasks(self, count: int) -> List[T]:
         now = self.get_time()
         delete_before = now - self.timeout
