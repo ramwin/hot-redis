@@ -7,13 +7,20 @@ import datetime
 import time
 import json
 
-from typing import List, Union, TypedDict
+from typing import (
+    cast,
+    Generic,
+    List,
+    Union,
+    TypedDict,
+    TypeVar,
+)
 
 from redis import Redis
 from redis.cluster import RedisCluster
 
 
-class DebounceTask(TypedDict):
+class DebounceTask:
     DELTA = int(datetime.datetime(2025, 1, 1, 0, 0, 0).timestamp())
 
     def __init__(self, client: Redis, key: str, timeout: int):
@@ -67,7 +74,10 @@ class Info(TypedDict):
     overtime_cnt: int
 
 
-class DebounceInfoTask:
+T = TypeVar("T")
+
+
+class DebounceInfoTask(Generic[T]):
     """compare to debouncetask, I accept dict as input"""
     DELTA = int(datetime.datetime(2025, 1, 1, 0, 0, 0).timestamp())
 
@@ -82,11 +92,11 @@ class DebounceInfoTask:
     def get_time(self) -> int:
         return int((time.time() - self.DELTA) * 10)
 
-    def add_task(self, task_info: dict):
+    def add_task(self, task_info: T):
         taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
         self.client.zadd(self.key, {taskid: self.get_time()}, nx=True)
 
-    def pop_tasks(self, max_wait: int=0, count: int=100) -> List[dict]:
+    def pop_tasks(self, max_wait: int=0, count: int=100) -> List[T]:
         """
         params:
             max_wait: 1 means 0.1 seconds
@@ -107,7 +117,7 @@ class DebounceInfoTask:
             return self._pop_tasks(count)
         return self._pop_tasks(count)
 
-    def _pop_tasks(self, count: int) -> List[str]:
+    def _pop_tasks(self, count: int) -> List[T]:
         now = self.get_time()
         delete_before = now - self.timeout
         last_obj = self.client.zrange(self.key, count-1, count-1, withscores=True)
@@ -123,11 +133,11 @@ class DebounceInfoTask:
             .zremrangebyscore(self.key, min=0, max=delete_before)\
             .execute()
         return [
-                json.loads(taskid)
+                cast(T, json.loads(cast(str, taskid)))
                 for taskid in taskids
         ]
 
-    def get_info(self) -> DebounceTask:
+    def get_info(self) -> Info:
         """
         return current info
             remain_cnt: the task in redis
