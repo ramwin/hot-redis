@@ -168,3 +168,6 @@ class DebounceInfoTask(Generic[T]):
                 "overtime_cnt": self.client.zcount(self.key, min=0, max=delete_before),
                 "remain_cnt": self.client.zcard(self.key),
         }
+
+    def __str__(self):
+        return f"DebounceInfoTask:{self.key}"
