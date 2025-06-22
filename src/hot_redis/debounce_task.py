@@ -6,6 +6,7 @@
 import datetime
 import time
 import json
+import warnings
 
 from typing import (
     cast,
@@ -27,6 +28,7 @@ class DebounceTask:
         """
         timeout: 1means 0.1s
         """
+        warnings.warn(DeprecationWarning("DebounceTask should be replaced with DebounceInfoTask, this will be removed in 1.0.0"))
         self.client = client
         self.key = key
         self.timeout = timeout
@@ -92,9 +94,13 @@ class DebounceInfoTask(Generic[T]):
     def get_time(self) -> int:
         return int((time.time() - self.DELTA) * 10)
 
-    def add_task(self, task_info: T):
+    def add_task(self, task_info: T, extra_delay: float=0):
+        """
+        params:
+            extra_delay: wait extra seconds(float) then normal task
+        """
         taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
-        self.client.zadd(self.key, {taskid: self.get_time()}, nx=True)
+        self.client.zadd(self.key, {taskid: self.get_time() + extra_delay}, nx=True)
 
     def pop_tasks(self, max_wait: int=0, count: int=100) -> List[T]:
         """
