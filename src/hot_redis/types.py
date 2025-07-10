@@ -4,13 +4,9 @@ import operator
 import time
 import uuid
 
-try:
-    # Python 3.
-    import queue
-    from functools import reduce
-except ImportError:
-    # Python 2.
-    import Queue as queue
+# Python 3.
+import queue
+from functools import reduce
 
 import redis
 
