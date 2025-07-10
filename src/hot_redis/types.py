@@ -172,13 +172,6 @@ class Numeric(Base):
     __ipow__      = inplace("number_pow")
 
 
-try:
-    # Python 2.
-    Numeric.__div__  = op_left(operator.div)
-    Numeric.__rdiv__ = op_right(operator.div)
-except AttributeError:
-    pass
-
 
 ####################################################
 #                                                  #

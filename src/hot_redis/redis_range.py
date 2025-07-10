@@ -3,6 +3,7 @@
 # Xiang Wang <ramwin@qq.com>
 
 
+from typing import Tuple, cast
 from redis import Redis
 
 
@@ -37,7 +38,7 @@ class RedisRange:
         self.pending_key = f"{key}:pending"
         self.inited = self.redis_client.exists(self.max_key)
 
-    def get_min_max(self) -> (int, int):
+    def get_min_max(self) -> Tuple[int, int]:
         assert self.inited
         a, b = self.redis_client.pipeline()\
                 .get(self.min_key)\
@@ -47,11 +48,11 @@ class RedisRange:
 
     def get_min(self) -> int:
         assert self.inited
-        return int(self.redis_client.get(self.min_key))
+        return int(cast(str, self.redis_client.get(self.min_key)))
 
     def get_max(self) -> int:
         assert self.inited
-        return int(self.redis_client.get(self.max_key))
+        return int(cast(str, self.redis_client.get(self.max_key)))
 
     def upper_to(self, stop: int) -> None:
         """

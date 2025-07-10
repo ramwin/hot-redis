@@ -58,7 +58,7 @@ class HotClient(redis.Redis):
 
 
 _thread = threading.local()
-_config = {}
+_config = {}  # type: ignore[var-annotated]
 
 
 def default_client():

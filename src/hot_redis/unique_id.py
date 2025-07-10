@@ -3,6 +3,7 @@
 
 
 
+from typing import Optional, cast
 from redis import Redis
 
 
@@ -18,25 +19,26 @@ class UniqueId:
             unique_id.get_or_create("student's id card No.1") => 3 unique
     """
 
-    def __init__(self, client: Redis, klass: str):
+    def __init__(self, client: Redis, klass: str, timeout: Optional[int] = None):
         self.client = client
         self.klass = klass
         self.value_key = klass + ":auto"
+        self.timeout = timeout
 
     def get_or_create(self, key: str) -> int:
         redis_key = self._get_redis_key(key)
         if (created := self.client.get(redis_key)):
             return int(created)
         newid = self.client.incr(self.value_key)
-        valid = self.client.set(redis_key, newid, nx=True)
+        valid = self.client.set(redis_key, newid, nx=True, ex=self.timeout)
         if valid:
             return newid
-        return int(self.client.get(redis_key))
+        return int(cast(str, self.client.get(redis_key)))
 
     def set(self, key: str, id: int):
         """override the int for a key"""
         redis_key = self._get_redis_key(key)
-        self.client.set(redis_key, id)
+        self.client.set(redis_key, id, ex=self.timeout)
 
     def incr_to(self, id: int):
         self.client.set(self.value_key, id)
