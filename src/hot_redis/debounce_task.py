@@ -12,13 +12,14 @@ from typing import (
     cast,
     Generic,
     List,
-    Union,
     TypedDict,
     TypeVar,
 )
 
 from redis import Redis
 from redis.cluster import RedisCluster
+
+from hot_redis.types import RedisClient
 
 
 class DebounceTask:
@@ -83,7 +84,7 @@ class DebounceInfoTask(Generic[T]):
     """compare to debouncetask, I accept dict as input"""
     DELTA = int(datetime.datetime(2025, 1, 1, 0, 0, 0).timestamp())
 
-    def __init__(self, client: Union[Redis, RedisCluster], key: str, timeout: int):
+    def __init__(self, client: RedisClient, key: str, timeout: int):
         """
         timeout: 1means 0.1s
         """

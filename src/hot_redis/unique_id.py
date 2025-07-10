@@ -4,7 +4,8 @@
 
 
 from typing import Optional, cast
-from redis import Redis
+
+from hot_redis.types import RedisClient
 
 
 class UniqueId:
@@ -19,7 +20,7 @@ class UniqueId:
             unique_id.get_or_create("student's id card No.1") => 3 unique
     """
 
-    def __init__(self, client: Redis, klass: str, timeout: Optional[int] = None):
+    def __init__(self, client: RedisClient, klass: str, timeout: Optional[int] = None):
         self.client = client
         self.klass = klass
         self.value_key = klass + ":auto"

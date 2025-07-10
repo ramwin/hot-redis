@@ -4,11 +4,16 @@ import operator
 import time
 import uuid
 
+from typing import Union
+
 # Python 3.
 import queue
 from functools import reduce
 
 import redis
+
+from redis import Redis
+from redis.cluster import RedisCluster
 
 from .client import default_client, transaction
 
@@ -906,3 +911,6 @@ class MultiSet(Dict):
         return values
 
 collections.abc.MutableMapping.register(MultiSet)
+
+
+RedisClient = Union[Redis, RedisCluster]
