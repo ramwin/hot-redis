@@ -103,6 +103,10 @@ class DebounceInfoTask(Generic[T]):
         taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
         self.client.zadd(self.key, {taskid: self.get_time() + extra_delay}, nx=True)
 
+    def remove_task(self, task_info: T):
+        taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
+        self.client.zrem(self.key, taskid)
+
     def pop_tasks(self, max_wait: int=0, count: int=100) -> List[T]:
         """
         params:
