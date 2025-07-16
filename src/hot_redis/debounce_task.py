@@ -95,13 +95,19 @@ class DebounceInfoTask(Generic[T]):
     def get_time(self) -> int:
         return int((time.time() - self.DELTA) * 10)
 
-    def add_task(self, task_info: T, extra_delay: float=0):
+    def add_task(self, task_info: T, extra_delay: float=0) -> bool:
         """
         params:
             extra_delay: wait extra seconds(float) then normal task
+        return:
+            bool, whether the task is new added or not
         """
         taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
-        self.client.zadd(self.key, {taskid: self.get_time() + extra_delay}, nx=True)
+        result = self.client.zadd(self.key, {taskid: self.get_time() + extra_delay}, nx=True)
+        return {
+                0: False,
+                1: True,
+        }[result]
 
     def remove_task(self, task_info: T):
         taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
