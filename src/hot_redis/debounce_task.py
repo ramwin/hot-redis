@@ -95,6 +95,10 @@ class DebounceInfoTask(Generic[T]):
     def get_time(self) -> int:
         return int((time.time() - self.DELTA) * 10)
 
+    def has_task(self, task_info: T) -> bool:
+        taskid = json.dumps(task_info, ensure_ascii=False, sort_keys=True)
+        return self.client.zscore(self.key, taskid) is not None
+
     def add_task(self, task_info: T, extra_delay: float=0) -> bool:
         """
         params:
