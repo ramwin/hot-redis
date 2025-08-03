@@ -5,12 +5,15 @@
 import random
 import time
 
-from typing import List, Set
+from typing import List, Set, TypeVar, Generic, Union
 
 from redis import Redis
 
 
-class DelayButFastSet:
+T = TypeVar('T', bound=Union[str, int, float])
+
+
+class DelayButFastSet(Generic[T]):
     """
     this class will read data from redis periodly and keep data in memory
     usage:
@@ -50,7 +53,7 @@ class DelayButFastSet:
             self.expire_at = time.perf_counter()
             self.version = -1
 
-    def __contains__(self, value):
+    def __contains__(self, value: T) -> bool:
         self.refresh_in_need()
         return str(value) in self._value
 
@@ -66,28 +69,29 @@ class DelayButFastSet:
         self._value = self.redis_client.smembers(self.value_key)
         self.version = self.redis_client.incr(self.version_key)
 
-    def add(self, value: str) -> None:
-        assert isinstance(value, str)
-        self._value.add(value)
+    def add(self, value: T) -> None:
+        str_value = str(value)
+        self._value.add(str_value)
         added, version = self.redis_client.pipeline()\
-                .sadd(self.value_key, value)\
+                .sadd(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
 
-    def discard(self, value: str) -> None:
-        assert isinstance(value, str)
-        self._value.discard(value)
+    def discard(self, value: T) -> None:
+        str_value = str(value)
+        self._value.discard(str_value)
         self.redis_client.pipeline()\
-                .srem(self.value_key, value)\
+                .srem(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
 
     remove = discard
 
-    def update(self, *values: List[str]) -> None:
-        self._value.update(values)
+    def update(self, *values: T) -> None:
+        str_values = [str(value) for value in values]
+        self._value.update(str_values)
         if values:
-            self.redis_client.sadd(self.value_key, *values)
+            self.redis_client.sadd(self.value_key, *str_values)
 
     def __iter__(self):
         self.refresh_in_need()
