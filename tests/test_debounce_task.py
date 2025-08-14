@@ -6,15 +6,23 @@
 import time
 import unittest
 
-from redis.cluster import RedisCluster
+from redis.cluster import RedisCluster, ClusterNode
 from hot_redis.debounce_task import DebounceInfoTask
 
 
 class Test(unittest.TestCase):
 
+    def setUp(self):
+        self.client = RedisCluster(
+            startup_nodes=[
+                ClusterNode("localhost", 7001),
+                ClusterNode("localhost", 7002),
+            ],
+            decode_responses=True,
+        )
+
     def test(self):
-        task = DebounceInfoTask(
-                client=RedisCluster.from_url("redis://localhost:7000", decode_responses=True),
+        task = DebounceInfoTask(self.client,
                 key="debounce_task",
                 timeout=20,
         )
@@ -45,7 +53,7 @@ class Test(unittest.TestCase):
 
     def test2(self):
         task = DebounceInfoTask(
-                client=RedisCluster.from_url("redis://localhost:7000", decode_responses=True),
+                client=self.client,
                 key="debounce_task",
                 timeout=20,
         )

@@ -3,4 +3,4 @@
 # Xiang Wang <ramwin@qq.com>
 
 
-__version__ = "0.20.0"
+__version__ = "0.21.0"
