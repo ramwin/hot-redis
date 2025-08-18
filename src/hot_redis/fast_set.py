@@ -102,30 +102,32 @@ class DelayButFastSet(Generic[T]):
 
     def add(self, value: T) -> None:
         str_value = str(value)
-        self._value.add(str_value)
-        # Execute Redis operations without updating local version
+        # Execute Redis operations first
         self.redis_client.pipeline()\
                 .sadd(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
+        # Update local value only after Redis operation succeeds
+        self._value.add(str_value)
         # Local version will be updated on next refresh
 
     def discard(self, value: T) -> None:
         str_value = str(value)
-        self._value.discard(str_value)
-        # Execute Redis operations without updating local version
+        # Execute Redis operations first
         self.redis_client.pipeline()\
                 .srem(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
+        # Update local value only after Redis operation succeeds
+        self._value.discard(str_value)
         # Local version will be updated on next refresh
 
     remove = discard
 
     def update(self, *values: T) -> None:
         str_values = [str(value) for value in values]
-        self._value.update(str_values)
         if values:
+            # Execute Redis operations first
             if self.version_mode == "v1":
                 # Legacy behavior: separate Redis calls, no pipeline, no local version sync
                 self.redis_client.sadd(self.value_key, *str_values)
@@ -136,6 +138,8 @@ class DelayButFastSet(Generic[T]):
                         .sadd(self.value_key, *str_values)\
                         .incr(self.version_key)\
                         .execute()
+            # Update local value only after Redis operation succeeds
+            self._value.update(str_values)
             # Local version will be updated on next refresh
 
     def __iter__(self):

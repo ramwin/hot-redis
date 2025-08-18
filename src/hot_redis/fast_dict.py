@@ -69,23 +69,25 @@ class DelayButFastDict(Generic[K, V]):
     def __setitem__(self, key: K, value: V) -> None:
         str_key = str(key)
         str_value = str(value)
-        self._value[str_key] = str_value
-        # Execute Redis operations without updating local version
+        # Execute Redis operations first
         self.redis_client.pipeline()\
                 .hset(self.value_key, str_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
+        # Update local value only after Redis operation succeeds
+        self._value[str_key] = str_value
         # Local version will be updated on next refresh
 
     def __delitem__(self, key: K) -> None:
         str_key = str(key)
-        if str_key in self._value:
-            del self._value[str_key]
-        # Execute Redis operations without updating local version
+        # Execute Redis operations first
         self.redis_client.pipeline()\
                 .hdel(self.value_key, str_key)\
                 .incr(self.version_key)\
                 .execute()
+        # Update local value only after Redis operation succeeds
+        if str_key in self._value:
+            del self._value[str_key]
         # Local version will be updated on next refresh
 
     def refresh_in_need(self) -> None:
@@ -155,12 +157,13 @@ class DelayButFastDict(Generic[K, V]):
         return self._value.items()
 
     def clear(self) -> None:
-        self._value.clear()
-        # Execute Redis operations without updating local version
+        # Execute Redis operations first
         self.redis_client.pipeline()\
                 .delete(self.value_key)\
                 .incr(self.version_key)\
                 .execute()
+        # Update local value only after Redis operation succeeds
+        self._value.clear()
         # Local version will be updated on next refresh
 
     def __iter__(self):
