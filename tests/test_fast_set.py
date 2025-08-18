@@ -20,7 +20,27 @@ class TestFastSetGeneric(unittest.TestCase):
     def setUp(self):
         """Clean Redis data before each test"""
         self.redis_client = Redis(decode_responses=True)
-        # Clean using hash tags format
+        # Clean both v1 and v2 key formats
+        # v1 format (without hash tags)
+        self.redis_client.delete("test_set:value")
+        self.redis_client.delete("test_set:version")
+        self.redis_client.delete("test_set2:value")
+        self.redis_client.delete("test_set2:version")
+        # v2 format (with hash tags)
+        self.redis_client.delete("{test_set}:value")
+        self.redis_client.delete("{test_set}:version")
+        self.redis_client.delete("{test_set2}:value")
+        self.redis_client.delete("{test_set2}:version")
+
+    def tearDown(self):
+        """Clean Redis data after each test"""
+        # Clean both v1 and v2 key formats
+        # v1 format (without hash tags)
+        self.redis_client.delete("test_set:value")
+        self.redis_client.delete("test_set:version")
+        self.redis_client.delete("test_set2:value")
+        self.redis_client.delete("test_set2:version")
+        # v2 format (with hash tags)
         self.redis_client.delete("{test_set}:value")
         self.redis_client.delete("{test_set}:version")
         self.redis_client.delete("{test_set2}:value")
@@ -106,8 +126,9 @@ class TestFastSetGeneric(unittest.TestCase):
         # Test __str__ method
         str_result = str(string_set)
         self.assertIn("DelayButFastSet", str_result)
-        self.assertIn("{test_set}:value", str_result)
-        self.assertIn("{test_set}:version", str_result)
+        # v1 mode uses keys without hash tags
+        self.assertIn("test_set:value", str_result)
+        self.assertIn("test_set:version", str_result)
         
         # Ensure functionality works after __str__ call
         self.assertTrue("a" in string_set)

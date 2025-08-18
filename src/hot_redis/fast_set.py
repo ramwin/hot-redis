@@ -56,7 +56,7 @@ class DelayButFastSet(Generic[T]):
         self.version_mode = version
         self.redis_client = redis_client
         # Use hash tags to ensure both keys are in the same Redis Cluster slot
-        if version == 1:
+        if version == "v1":
             self.value_key = f"{key}:value"
             self.version_key = f"{key}:version"
         else:
@@ -103,36 +103,22 @@ class DelayButFastSet(Generic[T]):
     def add(self, value: T) -> None:
         str_value = str(value)
         self._value.add(str_value)
-        if self.version_mode == "v1":
-            # Legacy behavior: pipeline but no local version sync
-            added, version = self.redis_client.pipeline()\
-                    .sadd(self.value_key, str_value)\
-                    .incr(self.version_key)\
-                    .execute()
-        else:
-            # v2 behavior: pipeline and sync local version
-            added, new_version = self.redis_client.pipeline()\
-                    .sadd(self.value_key, str_value)\
-                    .incr(self.version_key)\
-                    .execute()
-            self.version = new_version
+        # Execute Redis operations without updating local version
+        self.redis_client.pipeline()\
+                .sadd(self.value_key, str_value)\
+                .incr(self.version_key)\
+                .execute()
+        # Local version will be updated on next refresh
 
     def discard(self, value: T) -> None:
         str_value = str(value)
         self._value.discard(str_value)
-        if self.version_mode == "v1":
-            # Legacy behavior: pipeline but no local version sync
-            self.redis_client.pipeline()\
-                    .srem(self.value_key, str_value)\
-                    .incr(self.version_key)\
-                    .execute()
-        else:
-            # v2 behavior: pipeline and sync local version
-            _, new_version = self.redis_client.pipeline()\
-                    .srem(self.value_key, str_value)\
-                    .incr(self.version_key)\
-                    .execute()
-            self.version = new_version
+        # Execute Redis operations without updating local version
+        self.redis_client.pipeline()\
+                .srem(self.value_key, str_value)\
+                .incr(self.version_key)\
+                .execute()
+        # Local version will be updated on next refresh
 
     remove = discard
 
@@ -145,12 +131,12 @@ class DelayButFastSet(Generic[T]):
                 self.redis_client.sadd(self.value_key, *str_values)
                 self.redis_client.incr(self.version_key)
             else:
-                # v2 behavior: pipeline and sync local version
-                _, new_version = self.redis_client.pipeline()\
+                # v2 behavior: pipeline without local version sync
+                self.redis_client.pipeline()\
                         .sadd(self.value_key, *str_values)\
                         .incr(self.version_key)\
                         .execute()
-                self.version = new_version
+            # Local version will be updated on next refresh
 
     def __iter__(self):
         self.refresh_in_need()

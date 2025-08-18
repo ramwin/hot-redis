@@ -70,21 +70,23 @@ class DelayButFastDict(Generic[K, V]):
         str_key = str(key)
         str_value = str(value)
         self._value[str_key] = str_value
-        _, new_version = self.redis_client.pipeline()\
+        # Execute Redis operations without updating local version
+        self.redis_client.pipeline()\
                 .hset(self.value_key, str_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
-        self.version = new_version
+        # Local version will be updated on next refresh
 
     def __delitem__(self, key: K) -> None:
         str_key = str(key)
         if str_key in self._value:
             del self._value[str_key]
-        _, new_version = self.redis_client.pipeline()\
+        # Execute Redis operations without updating local version
+        self.redis_client.pipeline()\
                 .hdel(self.value_key, str_key)\
                 .incr(self.version_key)\
                 .execute()
-        self.version = new_version
+        # Local version will be updated on next refresh
 
     def refresh_in_need(self) -> None:
         if time.perf_counter() < self.expire_at:
@@ -154,11 +156,12 @@ class DelayButFastDict(Generic[K, V]):
 
     def clear(self) -> None:
         self._value.clear()
-        _, new_version = self.redis_client.pipeline()\
+        # Execute Redis operations without updating local version
+        self.redis_client.pipeline()\
                 .delete(self.value_key)\
                 .incr(self.version_key)\
                 .execute()
-        self.version = new_version
+        # Local version will be updated on next refresh
 
     def __iter__(self):
         self.refresh_in_need()
