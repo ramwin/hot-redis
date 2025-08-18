@@ -5,7 +5,7 @@
 import random
 import time
 
-from typing import List, Set, TypeVar, Generic, Union
+from typing import Set, TypeVar, Generic, Union
 
 from redis import Redis
 
@@ -27,10 +27,11 @@ class DelayButFastSet(Generic[T]):
         "123" in WATCHING_USERS  # True
     """
 
-    def __init__(self, redis_client=None, key="", timeout=10, startup_init: bool = False):
+    def __init__(self, redis_client=None, key="", timeout=10, startup_init: bool = False, version: int=1):
         """
         params:
             startup_init: load data from redis on instance initialized
+            version: in version1, the key may be in different slot
         """
         if redis_client is None:
             redis_client = Redis(decode_responses=True)
@@ -39,8 +40,13 @@ class DelayButFastSet(Generic[T]):
         assert redis_client.get_encoder().decode_responses is True
 
         self.redis_client = redis_client
-        self.value_key = f"{key}:value"
-        self.version_key = f"{key}:version"
+        # Use hash tags to ensure both keys are in the same Redis Cluster slot
+        if version == 1:
+            self.value_key = f"{key}:value"
+            self.version_key = f"{key}:version"
+        else:
+            self.value_key = f"{{{key}}}:value"
+            self.version_key = f"{{{key}}}:version"
 
         self.timeout = timeout
         self._value: Set[str] = set()
@@ -66,24 +72,30 @@ class DelayButFastSet(Generic[T]):
         self.refresh()
 
     def refresh(self) -> None:
-        self._value = self.redis_client.smembers(self.value_key)
-        self.version = self.redis_client.incr(self.version_key)
+        version, value = self.redis_client.pipeline()\
+                .get(self.version_key)\
+                .smembers(self.value_key)\
+                .execute()
+        self.version = int(version or 0)
+        self._value = value or set()
 
     def add(self, value: T) -> None:
         str_value = str(value)
         self._value.add(str_value)
-        added, version = self.redis_client.pipeline()\
+        added, new_version = self.redis_client.pipeline()\
                 .sadd(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
+        self.version = new_version
 
     def discard(self, value: T) -> None:
         str_value = str(value)
         self._value.discard(str_value)
-        self.redis_client.pipeline()\
+        _, new_version = self.redis_client.pipeline()\
                 .srem(self.value_key, str_value)\
                 .incr(self.version_key)\
                 .execute()
+        self.version = new_version
 
     remove = discard
 
@@ -91,7 +103,11 @@ class DelayButFastSet(Generic[T]):
         str_values = [str(value) for value in values]
         self._value.update(str_values)
         if values:
-            self.redis_client.sadd(self.value_key, *str_values)
+            _, new_version = self.redis_client.pipeline()\
+                    .sadd(self.value_key, *str_values)\
+                    .incr(self.version_key)\
+                    .execute()
+            self.version = new_version
 
     def __iter__(self):
         self.refresh_in_need()
